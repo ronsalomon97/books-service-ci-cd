@@ -1,140 +1,206 @@
-name: assignment3
+name: assignment3  # Workflow name
 
 on:
   push:
     branches:
-      - main
+      - main  # Trigger workflow on push to main branch
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # Specify the runner
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v3
 
-      - name: Log in to Docker Hub
+      - name: Log start time
+        run: echo "$(date -Iminutes)" > log.txt
+
+      - name: Log submitter names
+        run: echo "Ron Salomon, Maya Levi" >> log.txt
+
+      - name: Log in to Docker Hub  # Log in to Docker Hub using secrets
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v2
+      - name: Build Docker image for books service
+        uses: docker/build-push-action@v4
         with:
           context: ./books-service
           file: ./books-service/Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/books-service:latest
 
-      - name: Save log
+      - name: Log build success
         run: echo "image successfully built" >> log.txt
+        if: success()
 
-      - name: Upload log
-        uses: actions/upload-artifact@v2
+      - name: Log build failure
+        run: echo "image not able to be built" >> log.txt
+        if: failure()
+
+      - name: Upload log file
+        uses: actions/upload-artifact@v4
         with:
           name: log
           path: log.txt
 
   test:
-    needs: build
-    runs-on: ubuntu-latest
+    needs: build  # Run test job after build job
+    runs-on: ubuntu-latest  # Specify the runner
 
     services:
       mongo:
-        image: mongo:4.4
+        image: mongo:4.4  # Use MongoDB service
         ports:
-          - 27017:27017
+          - 27017:27017  # Map MongoDB port
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v1
+      # Part 1: Download the image and run it in a container
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v4
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          name: books-service-image
+          path: /tmp
 
-      - name: Pull Docker image
-        run: docker pull ${{ secrets.DOCKER_USERNAME }}/books-service:latest
+      - name: Load Docker image from artifact
+        run: docker load --input /tmp/img.tar
 
-      - name: Run books service
+      - name: Check Docker image is loaded
+        run: docker image ls
+
+      - name: Run Docker image in container
+        run: docker run -d --name books-service -p 5001:5001 books-service:latest
+
+      - name: Check container is running
+        run: docker ps
+
+      # Part 2: Set up Python and pytest environment
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
         run: |
-          docker run -d -p 5001:5001 --name books-service ${{ secrets.DOCKER_USERNAME }}/books-service:latest
+          python -m pip install --upgrade pip
+          pip install pytest requests
 
-      - name: Run tests
+      # Part 3: Run pytest and upload the results
+      - name: Run pytest
         run: |
-          pytest -v tests/assn3_tests.py > assn3_test_results.txt
+          pytest -v books-service/tests/assn3_tests.py > assn3_test_results.txt
           if [ $? -eq 0 ]; then
             echo "tests succeeded" >> log.txt
           else
             echo "tests failed" >> log.txt
 
       - name: Upload test results
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: test-results
           path: assn3_test_results.txt
 
-      - name: Upload log
-        uses: actions/upload-artifact@v2
+      - name: Upload log file
+        uses: actions/upload-artifact@v4
         with:
           name: log
           path: log.txt
 
-  query:
-    needs: test
-    runs-on: ubuntu-latest
+      # Part 4: Push tagged images to DockerHub if tests succeed
+      - name: Set DATE environment variable
+        run: echo "DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
+
+      - name: DockerHub login
+        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+        if: success()
+
+      - name: Tag and push Docker image
+        run: |
+          docker tag books-service:latest ${{ secrets.DOCKER_USERNAME }}/books-service:${{ env.DATE }}
+          docker push ${{ secrets.DOCKER_USERNAME }}/books-service:${{ env.DATE }}
+        if: success()
+
+ query:
+    needs: test  # Run query job after test job
+    runs-on: ubuntu-latest  # Specify the runner
 
     services:
       mongo:
-        image: mongo:4.4
+        image: mongo:4.4  # Use MongoDB service
         ports:
-          - 27017:27017
+          - 27017:27017  # Map MongoDB port
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v1
+      # Part 1: Download the image and run it in a container
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v4
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          name: books-service-image
+          path: /tmp
 
-      - name: Pull Docker image
-        run: docker pull ${{ secrets.DOCKER_USERNAME }}/books-service:latest
+      - name: Load Docker image from artifact
+        run: docker load --input /tmp/img.tar
 
-      - name: Run books service
+      - name: Check Docker image is loaded
+        run: docker image ls
+
+      - name: Run Docker image in container
+        run: docker run -d --name books-service -p 5001:5001 --network="host" books-service:latest
+
+      - name: Check container is running
+        run: docker ps
+
+      # Part 2: Execute initial POST requests
+      - name: Execute POST requests
         run: |
-          docker run -d -p 5001:5001 --name books-service ${{ secrets.DOCKER_USERNAME }}/books-service:latest
+          url="http://localhost:5001/books"
+          books=(
+            '{"title": "Adventures of Huckleberry Finn", "authors": "Mark Twain", "ISBN": "9780520343641", "genre": "Fiction"}'
+            '{"title": "The Best of Isaac Asimov", "authors": "Isaac Asimov", "ISBN": "9780385050784", "genre": "Science Fiction"}'
+            '{"title": "Fear No Evil", "authors": "Natan Sharansky", "ISBN": "9780394558783", "genre": "Biography"}'
+            '{"title": "Book Six", "authors": "Author Six", "ISBN": "9781234567896", "genre": "Fiction"}'
+            '{"title": "Book Seven", "authors": "Author Seven", "ISBN": "9781234567897", "genre": "Science Fiction"}'
+            '{"title": "Book Eight", "authors": "Author Eight", "ISBN": "9781234567898", "genre": "Biography"}'
+          )
+          for book in "${books[@]}"; do
+            curl -X POST -H "Content-Type: application/json" -d "$book" "$url"
+          done
 
-      - name: Execute queries
+      # Part 3: Set up Python environment (if needed for further steps)
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Part 4: Perform queries
+      - name: Perform queries
         run: |
-          while IFS= read -r query; do
-            response=$(curl -s "http://localhost:5001/books$query")
-            echo "query: $query" >> response.txt
-            echo "response: $response" >> response.txt
+          if [ ! -f query.txt ]; then
+            echo "query.txt file not found!" && exit 1
+          fi
+          RESPONSE_FILE="response.txt"
+          echo "query results" > $RESPONSE_FILE
+          while read query; do
+            response=$(curl -s -w "\n%{http_code}" "http://localhost:5001/books$query")
+            http_code=$(echo "$response" | tail -n1)
+            if [ "$http_code" -eq 200 ]; then
+              json=$(echo "$response" | head -n -1)
+              echo -e "query: $query\nresponse: $json" >> $RESPONSE_FILE
+            else
+              echo -e "query: $query\nresponse: error $http_code" >> $RESPONSE_FILE
+            fi
           done < query.txt
 
-      - name: Upload query results
-        uses: actions/upload-artifact@v2
+      # Part 5: Upload response file
+      - name: Upload response file
+        uses: actions/upload-artifact@v4
         with:
           name: response
           path: response.txt
-
-      - name: Upload log
-        uses: actions/upload-artifact@v2
-        with:
-          name: log
-          path: log.txt
