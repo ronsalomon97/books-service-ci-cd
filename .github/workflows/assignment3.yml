@@ -31,10 +31,11 @@ jobs:
       - name: Build Docker image for books service
         uses: docker/build-push-action@v4
         with:
-          context: ./books_service  # Ensure this path is correct
-          file: ./books_service/Dockerfile  # Ensure this path is correct
+          context: ./books_service
+          file: ./books_service/Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/books-service:latest
+          outputs: type=docker,dest=/tmp/books-service-image.tar
 
       - name: Log build success
         run: echo "image successfully built" >> log.txt
@@ -43,6 +44,12 @@ jobs:
       - name: Log build failure
         run: echo "image not able to be built" >> log.txt
         if: failure()
+
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: books-service-image
+          path: /tmp/books-service-image.tar
 
       - name: Upload log file
         uses: actions/upload-artifact@v4
@@ -61,7 +68,6 @@ jobs:
           - 27017:27017  # Map MongoDB port
 
     steps:
-      # Part 1: Download the image and run it in a container
       - name: Download Docker image artifact
         uses: actions/download-artifact@v4
         with:
@@ -69,7 +75,7 @@ jobs:
           path: /tmp
 
       - name: Load Docker image from artifact
-        run: docker load --input /tmp/img.tar
+        run: docker load --input /tmp/books-service-image.tar
 
       - name: Check Docker image is loaded
         run: docker image ls
@@ -140,7 +146,6 @@ jobs:
           - 27017:27017  # Map MongoDB port
 
     steps:
-      # Part 1: Download the image and run it in a container
       - name: Download Docker image artifact
         uses: actions/download-artifact@v4
         with:
@@ -148,7 +153,7 @@ jobs:
           path: /tmp
 
       - name: Load Docker image from artifact
-        run: docker load --input /tmp/img.tar
+        run: docker load --input /tmp/books-service-image.tar
 
       - name: Check Docker image is loaded
         run: docker image ls
