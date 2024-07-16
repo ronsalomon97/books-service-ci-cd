@@ -1,5 +1,6 @@
 import re
 import requests
+import logging
 from flask import jsonify, current_app
 from bson import ObjectId, errors
 from util.jsonify_tools import custom_jsonify, convert_objectid
@@ -7,12 +8,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+logging.basicConfig(level=logging.DEBUG)
+
 def add_book(data):
     db = current_app.config['db']
     expected_fields = {"ISBN", "title", "genre"}
     received_fields = set(data.keys())
 
-    if received_fields != expected_fields:
+    if not expected_fields.issubset(received_fields):
         return (
             jsonify(
                 {
@@ -60,7 +63,7 @@ def add_book(data):
     except (IndexError, KeyError):
         return (
             jsonify({"error": "Invalid ISBN number; not found in Google Books API"}),
-            422,
+            500,
         )
 
     authors_list = google_books_data.get("authors", ["missing"])
@@ -75,8 +78,8 @@ def add_book(data):
             r"^\d{4}-\d{2}-\d{2}$",  # YYYY-MM-DD
         ]
 
-    if not any(re.match(pattern, published_date) for pattern in valid_date_formats):
-        published_date = "missing"
+        if not any(re.match(pattern, published_date) for pattern in valid_date_formats):
+            published_date = "missing"
 
     book = {
         "ISBN": isbn,
@@ -88,10 +91,15 @@ def add_book(data):
     }
     book_id = db.books.insert_one(book).inserted_id
 
+    logging.debug(f"Book ID after insertion: {book_id}")
+
     rating = {"_id": book_id, "title": title, "values": [], "average": 0}
     db.ratings.insert_one(rating)
 
-    return jsonify({"ID": str(book_id)}), 201
+    response = jsonify({"ID": str(book_id)})
+    logging.debug(f"Response after book creation: {response.get_json()}")
+
+    return response, 201
 
 def get_book(book_id):
     db = current_app.config['db']
