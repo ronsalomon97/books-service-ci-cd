@@ -23,7 +23,7 @@ jobs:
         run: echo "Ron Salomon, Maya Levi" >> log.txt
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
@@ -44,20 +44,22 @@ jobs:
         run: echo "image not able to be built" >> log.txt
         if: failure()
 
-      - name: Save Docker image to file
-        run: docker save -o /tmp/books-service-image.tar ${{ secrets.DOCKER_USERNAME }}/books-service:latest
-
       - name: Upload Docker image artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: books-service-image
-          path: /tmp/books-service-image.tar
+        run: |
+          docker save ${{ secrets.DOCKER_USERNAME }}/books-service:latest -o /tmp/books-service-image.tar
+        if: success()
 
       - name: Upload log file
         uses: actions/upload-artifact@v4
         with:
           name: log
           path: log.txt
+
+      - name: Upload Docker image
+        uses: actions/upload-artifact@v4
+        with:
+          name: books-service-image
+          path: /tmp/books-service-image.tar
 
   test:
     needs: build  # Run test job after build job
@@ -108,7 +110,7 @@ jobs:
           pytest -v books_service/tests/assn3_tests.py > assn3_test_results.txt
           if [ $? -eq 0 ]; then
             echo "tests succeeded" >> log.txt
-          else
+          else:
             echo "tests failed" >> log.txt
 
       - name: Upload test results
@@ -133,7 +135,7 @@ jobs:
 
       - name: Tag and push Docker image
         run: |
-          docker tag ${{ secrets.DOCKER_USERNAME }}/books-service:latest ${{ secrets.DOCKER_USERNAME }}/books-service:${{ env.DATE }}
+          docker tag books-service:latest ${{ secrets.DOCKER_USERNAME }}/books-service:${{ env.DATE }}
           docker push ${{ secrets.DOCKER_USERNAME }}/books-service:${{ env.DATE }}
         if: success()
 
