@@ -103,7 +103,7 @@ jobs:
       # Part 3: Run pytest and upload the results
       - name: Run pytest
         run: |
-          pytest -v tests/assn3_tests.py > assn3_test_results.txt
+          pytest -v books-service/tests/assn3_tests.py > assn3_test_results.txt
           if [ $? -eq 0 ]; then
             echo "tests succeeded" >> log.txt
           else
