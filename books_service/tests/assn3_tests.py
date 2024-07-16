@@ -11,7 +11,9 @@ def test_post_books():
     for book in books:
         response = requests.post(url, json=book)
         assert response.status_code == 201
-        book_id = response.json().get("ID")
+        response_json = response.json()
+        assert "ID" in response_json
+        book_id = response_json["ID"]
         assert book_id not in ids
         ids.add(book_id)
 

@@ -91,7 +91,7 @@ def add_book(data):
     rating = {"_id": book_id, "title": title, "values": [], "average": 0}
     db.ratings.insert_one(rating)
 
-    return jsonify({"message": f"Book created successfully with ID {book_id}"}), 201
+    return jsonify({"ID": str(book_id)}), 201
 
 def get_book(book_id):
     db = current_app.config['db']
@@ -188,7 +188,7 @@ def update_book(book_id, updated_data):
         return jsonify({"error": "A book with this ISBN already exists"}), 422
 
     db.books.update_one({"_id": ObjectId(book_id)}, {"$set": updated_data})
-    return jsonify({"message": f"Book with ID {book_id} updated successfully"}), 200
+    return jsonify({"ID": str(book_id)}), 200
 
 def delete_book(book_id):
     db = current_app.config['db']
@@ -203,4 +203,4 @@ def delete_book(book_id):
     db.books.delete_one({"_id": ObjectId(book_id)})
     db.ratings.delete_one({"_id": ObjectId(book_id)})
 
-    return custom_jsonify({"id": str(book_id)}), 200
+    return custom_jsonify({"ID": str(book_id)}), 200

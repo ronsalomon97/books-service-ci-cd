@@ -180,7 +180,6 @@ jobs:
         uses: actions/checkout@v4
 
       # Part 4: Perform queries
-      - name: Perform queries
         run: |
           if [ ! -f query.txt ]; then
             echo "query.txt file not found!" && exit 1
