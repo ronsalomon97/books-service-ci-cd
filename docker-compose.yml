@@ -1,19 +1,16 @@
-version: '3'
-services:
-  books:
-    build:
-      context: .
-    ports:
-      - "5001:5001"
-    environment:
-      - MONGO_URI=mongodb://mongo:27017/books
+version: '3.8'
 
+services:
   mongo:
     image: mongo:4.4
     ports:
       - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
 
-volumes:
-  mongo-data:
+  books-service:
+    build:
+      context: ./books_service
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5001"
+    depends_on:
+      - mongo
