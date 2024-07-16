@@ -129,7 +129,7 @@ jobs:
           docker push ${{ secrets.DOCKER_USERNAME }}/books-service:${{ env.DATE }}
         if: success()
 
- query:
+  query:
     needs: test  # Run query job after test job
     runs-on: ubuntu-latest  # Specify the runner
 
@@ -180,6 +180,7 @@ jobs:
         uses: actions/checkout@v4
 
       # Part 4: Perform queries
+      - name: Perform queries
         run: |
           if [ ! -f query.txt ]; then
             echo "query.txt file not found!" && exit 1
