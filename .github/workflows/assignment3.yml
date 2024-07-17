@@ -131,10 +131,10 @@ jobs:
 
       - name: Run pytest
         run: |
-          pytest -v books_service/tests/assn3_tests.py > assn3_test_results.txt
+          pytest -v tests/assn3_tests.py > assn3_test_results.txt
           if [ $? -eq 0 ]; then
             echo "tests succeeded" >> log.txt
-          else
+          else:
             echo "tests failed" >> log.txt
         continue-on-error: true
 
@@ -243,7 +243,7 @@ jobs:
           while read query; do
             response=$(curl -s -w "\n%{http_code}" "http://localhost:5001/books$query")
             http_code=$(echo "$response" | tail -n1)
-            if [ "$http_code" -eq 200 ]; then
+            if [ "$http_code" -eq 200]; then
               json=$(echo "$response" | head -n -1)
               echo -e "query: $query\nresponse: $json" >> $RESPONSE_FILE
             else
