@@ -232,21 +232,21 @@ jobs:
 
       - name: Perform queries
         run: |
-          if [ ! -f query.txt ]; then
-            echo "query.txt file not found!" && exit 1
+          if [ ! -f books_service/query.txt ]; then
+            echo "books_service/query.txt file not found!" && exit 1
           fi
           RESPONSE_FILE="response.txt"
           echo "query results" > $RESPONSE_FILE
           while read query; do
             response=$(curl -s -w "\n%{http_code}" "http://localhost:5001/books$query")
             http_code=$(echo "$response" | tail -n1)
-            if [ "$http_code" -eq 200]; then
+            if [ "$http_code" -eq 200 ]; then
               json=$(echo "$response" | head -n -1)
               echo -e "query: $query\nresponse: $json" >> $RESPONSE_FILE
             else
               echo -e "query: $query\nresponse: error $http_code" >> $RESPONSE_FILE
             fi
-          done < query.txt
+          done < books_service/query.txt
 
       - name: Upload response file
         uses: actions/upload-artifact@v4
