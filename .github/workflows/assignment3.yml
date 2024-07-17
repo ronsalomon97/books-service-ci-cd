@@ -68,13 +68,6 @@ jobs:
     needs: build  # Run test job after build job
     runs-on: ubuntu-latest  # Specify the runner
 
-    services:
-      mongo:
-        image: mongo:4.4  # Use MongoDB service
-        options: --network github_network  # Ensure the mongo service is on the correct network
-        ports:
-          - 27017:27017  # Map MongoDB port
-
     steps:
       - name: Download Docker image artifact
         uses: actions/download-artifact@v4
@@ -88,13 +81,22 @@ jobs:
       - name: Check Docker image is loaded
         run: docker image ls
 
-      - name: Run Docker image in container
+      - name: Create Docker network
+        run: docker network create github_network
+
+      - name: Start MongoDB service container
+        run: |
+          docker run -d --name mongo --network github_network -p 27017:27017 mongo:4.4
+        env:
+          GITHUB_ACTIONS: true
+          CI: true
+
+      - name: Start books-service container
         run: docker run -d --name books-service --network github_network -p 5001:5001 ${{ secrets.DOCKER_USERNAME }}/books-service:latest
 
       - name: Check container is running
         run: docker ps
 
-      # Health check to ensure the service is running
       - name: Health check for books-service
         run: |
           for i in {1..10}; do
@@ -107,12 +109,10 @@ jobs:
           done
           echo "books-service did not start in time" && exit 1
 
-      # Log container logs if health check fails
       - name: Get books-service container logs
         if: failure()
         run: docker logs books-service
 
-      # Part 2: Set up Python and pytest environment
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -126,11 +126,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest requests
 
-      # List directory contents for debugging
       - name: List books_service directory
         run: ls -R books_service
 
-      # Part 3: Run pytest and upload the results
       - name: Run pytest
         run: |
           pytest -v books_service/tests/assn3_tests.py > assn3_test_results.txt
@@ -152,7 +150,6 @@ jobs:
           name: log
           path: log.txt
 
-      # Part 4: Push tagged images to DockerHub if tests succeed
       - name: Set DATE environment variable
         run: echo "DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
 
@@ -170,14 +167,17 @@ jobs:
     needs: test  # Run query job after test job
     runs-on: ubuntu-latest  # Specify the runner
 
-    services:
-      mongo:
-        image: mongo:4.4  # Use MongoDB service
-        options: --network github_network  # Ensure the mongo service is on the correct network
-        ports:
-          - 27017:27017  # Map MongoDB port
-
     steps:
+      - name: Create Docker network
+        run: docker network create github_network
+
+      - name: Start MongoDB service container
+        run: |
+          docker run -d --name mongo --network github_network -p 27017:27017 mongo:4.4
+        env:
+          GITHUB_ACTIONS: true
+          CI: true
+
       - name: Download Docker image artifact
         uses: actions/download-artifact@v4
         with:
@@ -190,13 +190,12 @@ jobs:
       - name: Check Docker image is loaded
         run: docker image ls
 
-      - name: Run Docker image in container
+      - name: Start books-service container
         run: docker run -d --name books-service --network github_network -p 5001:5001 ${{ secrets.DOCKER_USERNAME }}/books-service:latest
 
       - name: Check container is running
         run: docker ps
 
-      # Part 2: Execute initial POST requests
       - name: Execute POST requests
         run: |
           url="http://localhost:5001/books"
@@ -212,11 +211,9 @@ jobs:
             curl -X POST -H "Content-Type: application/json" -d "$book" "$url"
           done
 
-      # Part 3: Set up Python environment (if needed for further steps)
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Part 4: Perform queries
       - name: Perform queries
         run: |
           if [ ! -f query.txt ]; then
@@ -235,7 +232,6 @@ jobs:
             fi
           done < query.txt
 
-      # Part 5: Upload response file
       - name: Upload response file
         uses: actions/upload-artifact@v4
         with:
