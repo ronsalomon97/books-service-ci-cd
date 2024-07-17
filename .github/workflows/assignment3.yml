@@ -71,6 +71,7 @@ jobs:
     services:
       mongo:
         image: mongo:4.4  # Use MongoDB service
+        options: --network github_network  # Ensure the mongo service is on the correct network
         ports:
           - 27017:27017  # Map MongoDB port
 
@@ -88,7 +89,7 @@ jobs:
         run: docker image ls
 
       - name: Run Docker image in container
-        run: docker run -d --name books-service -p 5001:5001 ${{ secrets.DOCKER_USERNAME }}/books-service:latest
+        run: docker run -d --name books-service --network github_network -p 5001:5001 ${{ secrets.DOCKER_USERNAME }}/books-service:latest
 
       - name: Check container is running
         run: docker ps
@@ -172,6 +173,7 @@ jobs:
     services:
       mongo:
         image: mongo:4.4  # Use MongoDB service
+        options: --network github_network  # Ensure the mongo service is on the correct network
         ports:
           - 27017:27017  # Map MongoDB port
 
@@ -189,7 +191,7 @@ jobs:
         run: docker image ls
 
       - name: Run Docker image in container
-        run: docker run -d --name books-service -p 5001:5001 --network="host" ${{ secrets.DOCKER_USERNAME }}/books-service:latest
+        run: docker run -d --name books-service --network github_network -p 5001:5001 ${{ secrets.DOCKER_USERNAME }}/books-service:latest
 
       - name: Check container is running
         run: docker ps
