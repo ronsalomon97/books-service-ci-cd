@@ -212,6 +212,9 @@ jobs:
         if: failure()
         run: docker logs books-service
 
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Execute POST requests
         run: |
           url="http://localhost:5001/books"
@@ -227,9 +230,6 @@ jobs:
             curl -X POST -H "Content-Type: application/json" -d "$book" "$url"
           done
 
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Perform queries
         run: |
           if [ ! -f query.txt ]; then
@@ -240,10 +240,10 @@ jobs:
           while read query; do
             response=$(curl -s -w "\n%{http_code}" "http://localhost:5001/books$query")
             http_code=$(echo "$response" | tail -n1)
-            if [ "$http_code" -eq 200 ]; then
+            if [ "$http_code" -eq 200]; then
               json=$(echo "$response" | head -n -1)
               echo -e "query: $query\nresponse: $json" >> $RESPONSE_FILE
-            else:
+            else
               echo -e "query: $query\nresponse: error $http_code" >> $RESPONSE_FILE
             fi
           done < query.txt
