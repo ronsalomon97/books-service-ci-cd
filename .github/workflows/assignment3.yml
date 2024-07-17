@@ -134,7 +134,7 @@ jobs:
           pytest -v books_service/tests/assn3_tests.py > assn3_test_results.txt
           if [ $? -eq 0 ]; then
             echo "tests succeeded" >> log.txt
-          else:
+          else
             echo "tests failed" >> log.txt
         continue-on-error: true
 
@@ -214,6 +214,9 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: List books_service directory
+        run: ls -R books_service
 
       - name: Execute POST requests
         run: |
