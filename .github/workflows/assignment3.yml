@@ -107,13 +107,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest requests
 
+      # List directory contents for debugging
+      - name: List books_service directory
+        run: ls -R books_service
+
       # Part 3: Run pytest and upload the results
       - name: Run pytest
         run: |
           pytest -v books_service/tests/assn3_tests.py > assn3_test_results.txt
           if [ $? -eq 0 ]; then
             echo "tests succeeded" >> log.txt
-          else
+          else:
             echo "tests failed" >> log.txt
 
       - name: Upload test results
