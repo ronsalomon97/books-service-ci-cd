@@ -136,7 +136,6 @@ jobs:
             echo "tests succeeded" >> log.txt
           else
             echo "tests failed" >> log.txt
-        continue-on-error: true
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -196,28 +195,6 @@ jobs:
       - name: Check container is running
         run: docker ps
 
-      - name: Health check for books-service
-        run: |
-          for i in {1..10}; do
-            if curl --silent --fail http://localhost:5001/books; then
-              echo "books-service is up!"
-              exit 0
-            fi
-            echo "Waiting for books-service to be available..."
-            sleep 5
-          done
-          echo "books-service did not start in time" && exit 1
-
-      - name: Get books-service container logs
-        if: failure()
-        run: docker logs books-service
-
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: List books_service directory
-        run: ls -R books_service
-
       - name: Execute POST requests
         run: |
           url="http://localhost:5001/books"
@@ -225,20 +202,23 @@ jobs:
             '{"title": "Adventures of Huckleberry Finn", "authors": "Mark Twain", "ISBN": "9780520343641", "genre": "Fiction"}'
             '{"title": "The Best of Isaac Asimov", "authors": "Isaac Asimov", "ISBN": "9780385050784", "genre": "Science Fiction"}'
             '{"title": "Fear No Evil", "authors": "Natan Sharansky", "ISBN": "9780394558783", "genre": "Biography"}'
-            '{"title": "Book Six", "authors": "Author Six", "ISBN": "9781234567896", "genre": "Fiction"}'
-            '{"title": "Book Seven", "authors": "Author Seven", "ISBN": "9781234567897", "genre": "Science Fiction"}'
-            '{"title": "Book Eight", "authors": "Author Eight", "ISBN": "9781234567898", "genre": "Biography"}'
+            '{"title": "The Adventures of Tom Sawyer", "authors": "Mark Twain", "ISBN": "9780195810400", "genre": "Fiction"}'
+            '{"title": "I, Robot", "authors": "Isaac Asimov", "ISBN": "9780553294385", "genre": "Science Fiction"}'
+            '{"title": "Second Foundation", "authors": "Isaac Asimov", "ISBN": "9780553293364", "genre": "Science Fiction"}'
           )
           for book in "${books[@]}"; do
             curl -X POST -H "Content-Type: application/json" -d "$book" "$url"
           done
+
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Perform queries
         run: |
           if [ ! -f books_service/query.txt ]; then
             echo "books_service/query.txt file not found!" && exit 1
           fi
-          RESPONSE_FILE="response.txt"
+          RESPONSE_FILE="books_service/response.txt"
           echo "query results" > $RESPONSE_FILE
           while read query; do
             response=$(curl -s -w "\n%{http_code}" "http://localhost:5001/books$query")
@@ -255,4 +235,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: response
-          path: response.txt
+          path: books_service/response.txt
