@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main  # Trigger workflow on push to main branch
+
 jobs:
   build:
     runs-on: ubuntu-latest  # Specify the runner
@@ -47,14 +48,20 @@ jobs:
       - name: Upload log file
         uses: actions/upload-artifact@v4
         with:
-          name: log-build
+          name: log
           path: log.txt
+
   test:
     needs: build  # Run test job after build job
     runs-on: ubuntu-latest  # Specify the runner
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Download log file
+        uses: actions/download-artifact@v4
+        with:
+          name: log
+          path: .
       - name: Download Docker image artifact
         uses: actions/download-artifact@v4
         with:
@@ -75,12 +82,13 @@ jobs:
           for i in {1..10}; do
             if curl --silent --fail http://localhost:5001/health; then
               echo "books-service is up!"
+              echo "Container up and running" >> log.txt
               exit 0
             fi
             echo "Waiting for books-service to be available..."
             sleep 5
           done
-          echo "books-service did not start in time" && exit 1
+          echo "books-service did not start in time" && echo "Container failed to run" >> log.txt && exit 1
       - name: Get books-service container ID
         id: books_service
         run: echo "::set-output name=id::$(docker ps -qf "name=books-service-ci-cd_books-service")"
@@ -110,27 +118,23 @@ jobs:
         with:
           name: test-results
           path: assn3_test_results.txt
-      - name: Upload log file
+      - name: Upload updated log file
         uses: actions/upload-artifact@v4
         with:
-          name: log-${{ github.run_id }}-${{ github.job }}
+          name: log
           path: log.txt
-      - name: Set DATE environment variable
-        run: echo "DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
-      - name: DockerHub login
-        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-        if: success()
-      - name: Tag and push Docker image
-        run: |
-          docker tag ${{ secrets.DOCKER_USERNAME }}/books-service:latest ${{ secrets.DOCKER_USERNAME }}/books-service:${{ env.DATE }}
-          docker push ${{ secrets.DOCKER_USERNAME }}/books-service:${{ env.DATE }}
-        if: success()
+
   query:
     needs: test  # Run query job after test job
     runs-on: ubuntu-latest  # Specify the runner
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Download log file
+        uses: actions/download-artifact@v4
+        with:
+          name: log
+          path: .
       - name: Verify presence of query.txt
         run: |
           if [ -f books_service/query.txt ]; then
@@ -206,3 +210,20 @@ jobs:
         with:
           name: response
           path: response.txt
+
+      - name: Set DATE environment variable
+        run: echo "DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
+      - name: DockerHub login
+        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+        if: success()
+      - name: Tag and push Docker image
+        run: |
+          docker tag ${{ secrets.DOCKER_USERNAME }}/books-service:latest ${{ secrets.DOCKER_USERNAME }}/books-service:${{ env.DATE }}
+          docker push ${{ secrets.DOCKER_USERNAME }}/books-service:${{ env.DATE }}
+        if: success()
+
+      - name: Upload final log file
+        uses: actions/upload-artifact@v4
+        with:
+          name: log
+          path: log.txt
