@@ -1,6 +1,6 @@
 # Books Service CI/CD
 
-This repository contains the code for the Books Service along with a Continuous Integration/Continuous Deployment (CI/CD) pipeline using GitHub Actions
+This repository contains the code for the Books Service along with a Continuous Integration/Continuous Deployment (CI/CD) pipeline using GitHub Actions.
 
 ## Project Structure
 
