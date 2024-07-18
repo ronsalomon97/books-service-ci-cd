@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - main  # Trigger workflow on push to main branch
-
 jobs:
   build:
     runs-on: ubuntu-latest  # Specify the runner
@@ -48,7 +47,7 @@ jobs:
       - name: Upload log file
         uses: actions/upload-artifact@v4
         with:
-          name: log
+          name: log-build
           path: log.txt
 
   test:
@@ -60,7 +59,7 @@ jobs:
       - name: Download log file
         uses: actions/download-artifact@v4
         with:
-          name: log
+          name: log-build
           path: .
       - name: Download Docker image artifact
         uses: actions/download-artifact@v4
@@ -121,7 +120,7 @@ jobs:
       - name: Upload updated log file
         uses: actions/upload-artifact@v4
         with:
-          name: log
+          name: log-test
           path: log.txt
 
   query:
@@ -133,7 +132,7 @@ jobs:
       - name: Download log file
         uses: actions/download-artifact@v4
         with:
-          name: log
+          name: log-test
           path: .
       - name: Verify presence of query.txt
         run: |
@@ -203,27 +202,45 @@ jobs:
 
             sleep 1
           done < $QUERY_FILE
-
-
       - name: Upload response file
         uses: actions/upload-artifact@v4
         with:
           name: response
           path: response.txt
-
-      - name: Set DATE environment variable
-        run: echo "DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
-      - name: DockerHub login
-        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-        if: success()
-      - name: Tag and push Docker image
-        run: |
-          docker tag ${{ secrets.DOCKER_USERNAME }}/books-service:latest ${{ secrets.DOCKER_USERNAME }}/books-service:${{ env.DATE }}
-          docker push ${{ secrets.DOCKER_USERNAME }}/books-service:${{ env.DATE }}
-        if: success()
-
+      - name: Log final success
+        run: echo "Final job succeeded" >> log.txt
       - name: Upload final log file
         uses: actions/upload-artifact@v4
         with:
-          name: log
+          name: log-final
           path: log.txt
+
+  consolidate-logs:
+    needs: [build, test, query]  # Run this job after all other jobs
+    runs-on: ubuntu-latest  # Specify the runner
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Download build log
+        uses: actions/download-artifact@v4
+        with:
+          name: log-build
+          path: .
+      - name: Download test log
+        uses: actions/download-artifact@v4
+        with:
+          name: log-test
+          path: .
+      - name: Download final log
+        uses: actions/download-artifact@v4
+        with:
+          name: log-final
+          path: .
+      - name: Consolidate logs
+        run: |
+          cat log-build/log.txt log-test/log.txt log-final/log.txt > consolidated-log.txt
+      - name: Upload consolidated log
+        uses: actions/upload-artifact@v4
+        with:
+          name: consolidated-log
+          path: consolidated-log.txt
