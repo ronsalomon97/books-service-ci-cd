@@ -24,6 +24,12 @@ services:
     environment:
       MONGO_URI: mongodb://root:example@mongo:27017/
       FLASK_ENV: development
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]  # Add a health endpoint to your Flask app
+      interval: 30s
+      retries: 3
+      start_period: 30s
+      timeout: 10s
 
 networks:
   booknet:
