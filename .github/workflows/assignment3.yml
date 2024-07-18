@@ -61,7 +61,7 @@ jobs:
       - name: Upload log file
         uses: actions/upload-artifact@v4
         with:
-          name: log
+          name: log-build
           path: log.txt
 
   test:
@@ -139,7 +139,7 @@ jobs:
       - name: Upload log file
         uses: actions/upload-artifact@v4
         with:
-          name: log
+          name: log-test
           path: log.txt
 
       - name: Set DATE environment variable
