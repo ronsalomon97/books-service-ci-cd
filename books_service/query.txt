@@ -1,3 +1,6 @@
-?publishedDate=2016-06-13
 ?title=Adventures of Huckleberry Finn
-?genre=Fiction
+?title=The Best of Isaac Asimov
+?title=Fear No Evil
+?title=The Adventures of Tom Sawyer
+?title=I, Robot
+?title=Second Foundation
