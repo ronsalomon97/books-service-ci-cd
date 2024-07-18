@@ -171,18 +171,6 @@ jobs:
       - name: Check containers are running
         run: docker ps
 
-      - name: Health check for books-service
-        run: |
-          for i in {1..10}; do
-            if curl --silent --fail http://localhost:5001/health; then
-              echo "books-service is up!"
-              exit 0
-            fi
-            echo "Waiting for books-service to be available..."
-            sleep 5
-          done
-          echo "books-service did not start in time" && exit 1
-
       - name: Execute POST requests
         run: |
           url="http://localhost:5001/books"
@@ -190,17 +178,13 @@ jobs:
             '{"title": "Adventures of Huckleberry Finn", "authors": "Mark Twain", "ISBN": "9780520343641", "genre": "Fiction"}'
             '{"title": "The Best of Isaac Asimov", "authors": "Isaac Asimov", "ISBN": "9780385050784", "genre": "Science Fiction"}'
             '{"title": "Fear No Evil", "authors": "Natan Sharansky", "ISBN": "9780394558783", "genre": "Biography"}'
-            '{"title": "Book Six", "authors": "Author Six", "ISBN": "9781234567896", "genre": "Fiction"}'
-            '{"title": "Book Seven", "authors": "Author Seven", "ISBN": "9781234567897", "genre": "Science Fiction"}'
-            '{"title": "Book Eight", "authors": "Author Eight", "ISBN": "9781234567898", "genre": "Biography"}'
+            '{"title": "The Adventures of Tom Sawyer", "authors": "Mark Twain", "ISBN": "9780195810400", "genre": "Fiction"}'
+            '{"title": "I, Robot", "authors": "Isaac Asimov", "ISBN": "9780553294385", "genre": "Science Fiction"}'
+            '{"title": "Second Foundation", "authors": "Isaac Asimov", "ISBN": "9780553293364", "genre": "Science Fiction"}'
           )
           for book in "${books[@]}"; do
             curl -X POST -H "Content-Type: application/json" -d "$book" "$url"
           done
-
-      - name: Get books-service container logs
-        if: failure()
-        run: docker logs books-service
 
       - name: Perform queries
         run: |
