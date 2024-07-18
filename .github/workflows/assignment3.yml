@@ -85,8 +85,7 @@ jobs:
         run: docker image ls
 
       - name: Set up Docker Compose
-        run: |
-          docker-compose -f docker-compose.yml up -d
+        run: docker-compose -f docker-compose.yml up -d
 
       - name: Check containers are running
         run: docker ps
@@ -162,32 +161,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Create Docker network
-        run: docker network create github_network
+      - name: Set up Docker Compose
+        run: docker-compose -f docker-compose.yml up -d
 
-      - name: Start MongoDB service container
-        run: |
-          docker run -d --name mongo --network github_network -p 27017:27017 mongo:4.4
-        env:
-          GITHUB_ACTIONS: true
-          CI: true
-
-      - name: Download Docker image artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: books-service-image
-          path: /tmp
-
-      - name: Load Docker image from artifact
-        run: docker load --input /tmp/books-service-image.tar
-
-      - name: Check Docker image is loaded
-        run: docker image ls
-
-      - name: Start books-service container
-        run: docker run -d --name books-service --network github_network -p 5001:5001 ${{ secrets.DOCKER_USERNAME }}/books-service:latest
-
-      - name: Check container is running
+      - name: Check containers are running
         run: docker ps
 
       - name: Execute POST requests
@@ -215,7 +192,7 @@ jobs:
           while read query; do
             response=$(curl -s -w "\n%{http_code}" "http://localhost:5001/books$query")
             http_code=$(echo "$response" | tail -n1)
-            if [ "$http_code" -eq 200]; then
+            if [ "$http_code" == "200" ]; then
               json=$(echo "$response" | head -n -1)
               echo -e "query: $query\nresponse: $json" >> $RESPONSE_FILE
             else
