@@ -104,9 +104,13 @@ jobs:
           done
           echo "books-service did not start in time" && exit 1
 
+      - name: Get books-service container ID
+        id: books_service
+        run: echo "::set-output name=id::$(docker ps -qf "name=books-service-ci-cd_books-service")"
+
       - name: Get books-service container logs
         if: failure()
-        run: docker logs books-service-ci-cd_books-service
+        run: docker logs ${{ steps.books_service.outputs.id }}
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -169,7 +173,7 @@ jobs:
           docker-compose -f docker-compose.yml up -d
 
       - name: Check containers are running
-        run: docker logs books-service-ci-cd_books-service
+        run: docker ps
 
       - name: Health check for books-service
         run: |
@@ -198,8 +202,12 @@ jobs:
             curl -X POST -H "Content-Type: application/json" -d "$book" "$url"
           done
 
+      - name: Get books-service container ID
+        id: books_service
+        run: echo "::set-output name=id::$(docker ps -qf "name=books-service-ci-cd_books-service")"
+
       - name: Get books-service container logs
-        run: docker logs books-service
+        run: docker logs ${{ steps.books_service.outputs.id }}
 
       - name: Perform queries
         run: |
