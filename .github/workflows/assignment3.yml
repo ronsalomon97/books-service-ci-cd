@@ -178,6 +178,8 @@ jobs:
             echo "?title=I, Robot" >> books_service/query.txt
             echo "?title=Second Foundation" >> books_service/query.txt
           fi
+          cat books_service/query.txt  # Print the contents of query.txt
+          sleep 5  # Sleep for 5 seconds to ensure file system stability
 
       - name: Set up Docker Compose
         run: |
