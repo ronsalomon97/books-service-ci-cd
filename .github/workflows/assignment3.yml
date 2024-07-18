@@ -47,7 +47,7 @@ jobs:
       - name: Upload log file
         uses: actions/upload-artifact@v4
         with:
-          name: log-build
+          name: log-file
           path: log.txt
 
   test:
@@ -56,10 +56,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Download log file
+      - name: Download log file from build
         uses: actions/download-artifact@v4
         with:
-          name: log-build
+          name: log-file
           path: .
       - name: Download Docker image artifact
         uses: actions/download-artifact@v4
@@ -120,7 +120,7 @@ jobs:
       - name: Upload updated log file
         uses: actions/upload-artifact@v4
         with:
-          name: log-test
+          name: log-file
           path: log.txt
 
   query:
@@ -129,10 +129,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Download log file
+      - name: Download log file from test
         uses: actions/download-artifact@v4
         with:
-          name: log-test
+          name: log-file
           path: .
       - name: Verify presence of query.txt
         run: |
@@ -212,35 +212,5 @@ jobs:
       - name: Upload final log file
         uses: actions/upload-artifact@v4
         with:
-          name: log-final
+          name: log-file
           path: log.txt
-
-  consolidate-logs:
-    needs: [build, test, query]  # Run this job after all other jobs
-    runs-on: ubuntu-latest  # Specify the runner
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Download build log
-        uses: actions/download-artifact@v4
-        with:
-          name: log-build
-          path: .
-      - name: Download test log
-        uses: actions/download-artifact@v4
-        with:
-          name: log-test
-          path: .
-      - name: Download final log
-        uses: actions/download-artifact@v4
-        with:
-          name: log-final
-          path: .
-      - name: Consolidate logs
-        run: |
-          cat log-build/log.txt log-test/log.txt log-final/log.txt > consolidated-log.txt
-      - name: Upload consolidated log
-        uses: actions/upload-artifact@v4
-        with:
-          name: consolidated-log
-          path: consolidated-log.txt
