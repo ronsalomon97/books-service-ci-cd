@@ -167,19 +167,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Ensure query.txt exists
+      - name: Verify presence of query.txt
         run: |
-          if [ ! -f books_service/query.txt ]; then
-            echo "Creating query.txt with default queries..."
-            echo "?title=Adventures of Huckleberry Finn" > books_service/query.txt
-            echo "?title=The Best of Isaac Asimov" >> books_service/query.txt
-            echo "?title=Fear No Evil" >> books_service/query.txt
-            echo "?title=The Adventures of Tom Sawyer" >> books_service/query.txt
-            echo "?title=I, Robot" >> books_service/query.txt
-            echo "?title=Second Foundation" >> books_service/query.txt
-          fi
-          cat books_service/query.txt  # Print the contents of query.txt
-          sleep 5  # Sleep for 5 seconds to ensure file system stability
+          if [ -f books_service/query.txt ]; then
+            echo "query.txt found"
+            echo "Contents of query.txt:"
+            cat books_service/query.txt
+          else
+            echo "query.txt not found"
+            exit 1
 
       - name: Set up Docker Compose
         run: |
@@ -230,7 +226,7 @@ jobs:
           fi
           RESPONSE_FILE="response.txt"
           echo "query results" > $RESPONSE_FILE
-          while read query; do
+          while read -r query; do
             response=$(curl -s -w "\n%{http_code}" "http://localhost:5001/books$query")
             http_code=$(echo "$response" | tail -n1)
             if [ "$http_code" == "200" ]; then
