@@ -167,6 +167,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Ensure query.txt exists
+        run: |
+          if [ ! -f books_service/query.txt ]; then
+            echo "Creating query.txt with default queries..."
+            echo "?title=Adventures of Huckleberry Finn" > books_service/query.txt
+            echo "?title=The Best of Isaac Asimov" >> books_service/query.txt
+            echo "?title=Fear No Evil" >> books_service/query.txt
+            echo "?title=The Adventures of Tom Sawyer" >> books_service/query.txt
+            echo "?title=I, Robot" >> books_service/query.txt
+            echo "?title=Second Foundation" >> books_service/query.txt
+          fi
+
       - name: Set up Docker Compose
         run: |
           docker-compose -f docker-compose.yml down
