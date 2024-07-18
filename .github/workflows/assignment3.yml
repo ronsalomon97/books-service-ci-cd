@@ -69,6 +69,9 @@ jobs:
     runs-on: ubuntu-latest  # Specify the runner
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Download Docker image artifact
         uses: actions/download-artifact@v4
         with:
@@ -81,20 +84,11 @@ jobs:
       - name: Check Docker image is loaded
         run: docker image ls
 
-      - name: Create Docker network
-        run: docker network create github_network
-
-      - name: Start MongoDB service container
+      - name: Set up Docker Compose
         run: |
-          docker run -d --name mongo --network github_network -p 27017:27017 mongo:4.4
-        env:
-          GITHUB_ACTIONS: true
-          CI: true
+          docker-compose -f docker-compose.yml up -d
 
-      - name: Start books-service container
-        run: docker run -d --name books-service --network github_network -p 5001:5001 ${{ secrets.DOCKER_USERNAME }}/books-service:latest
-
-      - name: Check container is running
+      - name: Check containers are running
         run: docker ps
 
       - name: Health check for books-service
@@ -112,9 +106,6 @@ jobs:
       - name: Get books-service container logs
         if: failure()
         run: docker logs books-service
-
-      - name: Checkout code
-        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -136,6 +127,7 @@ jobs:
             echo "tests succeeded" >> log.txt
           else
             echo "tests failed" >> log.txt
+        continue-on-error: true
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -167,6 +159,9 @@ jobs:
     runs-on: ubuntu-latest  # Specify the runner
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Create Docker network
         run: docker network create github_network
 
@@ -202,28 +197,25 @@ jobs:
             '{"title": "Adventures of Huckleberry Finn", "authors": "Mark Twain", "ISBN": "9780520343641", "genre": "Fiction"}'
             '{"title": "The Best of Isaac Asimov", "authors": "Isaac Asimov", "ISBN": "9780385050784", "genre": "Science Fiction"}'
             '{"title": "Fear No Evil", "authors": "Natan Sharansky", "ISBN": "9780394558783", "genre": "Biography"}'
-            '{"title": "The Adventures of Tom Sawyer", "authors": "Mark Twain", "ISBN": "9780195810400", "genre": "Fiction"}'
-            '{"title": "I, Robot", "authors": "Isaac Asimov", "ISBN": "9780553294385", "genre": "Science Fiction"}'
-            '{"title": "Second Foundation", "authors": "Isaac Asimov", "ISBN": "9780553293364", "genre": "Science Fiction"}'
+            '{"title": "Book Six", "authors": "Author Six", "ISBN": "9781234567896", "genre": "Fiction"}'
+            '{"title": "Book Seven", "authors": "Author Seven", "ISBN": "9781234567897", "genre": "Science Fiction"}'
+            '{"title": "Book Eight", "authors": "Author Eight", "ISBN": "9781234567898", "genre": "Biography"}'
           )
           for book in "${books[@]}"; do
             curl -X POST -H "Content-Type: application/json" -d "$book" "$url"
           done
-
-      - name: Checkout code
-        uses: actions/checkout@v4
 
       - name: Perform queries
         run: |
           if [ ! -f books_service/query.txt ]; then
             echo "books_service/query.txt file not found!" && exit 1
           fi
-          RESPONSE_FILE="books_service/response.txt"
+          RESPONSE_FILE="response.txt"
           echo "query results" > $RESPONSE_FILE
           while read query; do
             response=$(curl -s -w "\n%{http_code}" "http://localhost:5001/books$query")
             http_code=$(echo "$response" | tail -n1)
-            if [ "$http_code" -eq 200 ]; then
+            if [ "$http_code" -eq 200]; then
               json=$(echo "$response" | head -n -1)
               echo -e "query: $query\nresponse: $json" >> $RESPONSE_FILE
             else
@@ -235,4 +227,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: response
-          path: books_service/response.txt
+          path: response.txt

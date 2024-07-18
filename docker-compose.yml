@@ -5,6 +5,11 @@ services:
     image: mongo:4.4
     ports:
       - "27017:27017"
+    networks:
+      - booknet
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
 
   books-service:
     build:
@@ -14,3 +19,12 @@ services:
       - "5001:5001"
     depends_on:
       - mongo
+    networks:
+      - booknet
+    environment:
+      MONGO_URI: mongodb://root:example@mongo:27017/
+      FLASK_ENV: development
+
+networks:
+  booknet:
+    driver: bridge
