@@ -171,6 +171,18 @@ jobs:
       - name: Check containers are running
         run: docker ps
 
+      - name: Health check for books-service
+        run: |
+          for i in {1..10}; do
+            if curl --silent --fail http://localhost:5001/health; then
+              echo "books-service is up!"
+              exit 0
+            fi
+            echo "Waiting for books-service to be available..."
+            sleep 5
+          done
+          echo "books-service did not start in time" && exit 1
+
       - name: Execute POST requests
         run: |
           url="http://localhost:5001/books"
@@ -185,6 +197,9 @@ jobs:
           for book in "${books[@]}"; do
             curl -X POST -H "Content-Type: application/json" -d "$book" "$url"
           done
+
+      - name: Get books-service container logs
+        run: docker logs books-service
 
       - name: Perform queries
         run: |
