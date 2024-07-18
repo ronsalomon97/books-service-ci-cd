@@ -47,7 +47,7 @@ jobs:
       - name: Upload log file
         uses: actions/upload-artifact@v4
         with:
-          name: log-file
+          name: log-file-build
           path: log.txt
 
   test:
@@ -56,16 +56,16 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Download log file from build
-        uses: actions/download-artifact@v4
-        with:
-          name: log-file
-          path: .
       - name: Download Docker image artifact
         uses: actions/download-artifact@v4
         with:
           name: books-service-image
           path: /tmp
+      - name: Download log file from build
+        uses: actions/download-artifact@v4
+        with:
+          name: log-file-build
+          path: log.txt
       - name: Load Docker image from artifact
         run: docker load --input /tmp/books-service-image.tar
       - name: Check Docker image is loaded
@@ -117,10 +117,10 @@ jobs:
         with:
           name: test-results
           path: assn3_test_results.txt
-      - name: Upload updated log file
+      - name: Upload log file
         uses: actions/upload-artifact@v4
         with:
-          name: log-file
+          name: log-file-test
           path: log.txt
 
   query:
@@ -129,11 +129,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Download log file from test
+      - name: Download log file from previous jobs
         uses: actions/download-artifact@v4
         with:
-          name: log-file
-          path: .
+          name: log-file-test
+          path: log.txt
       - name: Verify presence of query.txt
         run: |
           if [ -f books_service/query.txt ]; then
@@ -207,10 +207,8 @@ jobs:
         with:
           name: response
           path: response.txt
-      - name: Log final success
-        run: echo "Final job succeeded" >> log.txt
       - name: Upload final log file
         uses: actions/upload-artifact@v4
         with:
-          name: log-file
+          name: log-file-final
           path: log.txt
