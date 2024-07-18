@@ -106,7 +106,7 @@ jobs:
 
       - name: Get books-service container logs
         if: failure()
-        run: docker logs books-service
+        run: docker logs books-service-ci-cd_books-service
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -169,7 +169,7 @@ jobs:
           docker-compose -f docker-compose.yml up -d
 
       - name: Check containers are running
-        run: docker ps
+        run: docker logs books-service-ci-cd_books-service
 
       - name: Health check for books-service
         run: |
