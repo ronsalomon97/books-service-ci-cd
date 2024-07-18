@@ -223,17 +223,25 @@ jobs:
       - name: Perform queries
         run: |
           RESPONSE_FILE="response.txt"
+          QUERY_FILE="books_service/query.txt"
+    
           echo "query results" > $RESPONSE_FILE
+    
           while IFS= read -r query; do
+            echo "Processing query: $query"  # Debugging output
             response=$(curl -s -w "\n%{http_code}" "http://localhost:5001/books$query")
             http_code=$(echo "$response" | tail -n1)
+            echo "HTTP response code: $http_code"  # Debugging output
             if [ "$http_code" == "200" ]; then
               json=$(echo "$response" | head -n -1)
               echo -e "query: $query\nresponse: $json" >> $RESPONSE_FILE
             else
               echo -e "query: $query\nresponse: error $http_code" >> $RESPONSE_FILE
             fi
-          done < books_service/query.txt
+      
+            sleep 1
+          done < $QUERY_FILE
+
 
       - name: Upload response file
         uses: actions/upload-artifact@v4
