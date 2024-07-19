@@ -126,6 +126,8 @@ jobs:
           name: log
           path: log.txt
           overwrite: true
+      - name: Shutdown Docker Compose
+        run: docker-compose -f docker-compose.yml down
 
   query:
     needs: test  # Run query job after test job
