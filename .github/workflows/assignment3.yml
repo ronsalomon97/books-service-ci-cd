@@ -185,26 +185,18 @@ jobs:
         run: docker logs ${{ steps.books_service.outputs.id }}
       - name: Perform queries
         run: |
-          RESPONSE_FILE="response.txt"
-          QUERY_FILE="books_service/query.txt"
-    
-          echo "query results" > $RESPONSE_FILE
-
+          touch response.txt
           while IFS= read -r query; do
-            echo "Processing query: $query"  # Debugging output
-            response=$(curl -s -w "\n%{http_code}" "http://localhost:5001/books$query")
-            http_code=$(echo "$response" | tail -n1)
-            echo "HTTP response code: $http_code"  # Debugging output
-            if [ "$http_code" == "200" ]; then
-              json=$(echo "$response" | head -n -1)
-              echo -e "query: $query\nresponse: $json" >> $RESPONSE_FILE
+            response=$(curl --location -s -w "\nHTTP_CODE:%{http_code}" "http://localhost:5001/books$query" -v)
+            body=$(echo "$response" | sed '$d')
+            code=$(echo "$response" | tail -n1 | cut -d':' -f2)
+            echo "query: $query" >> response.txt
+            if [ "$code" -eq 200 ]; then
+              echo "response: $body" >> response.txt
             else
-              echo -e "query: $query\nresponse: error $http_code" >> $RESPONSE_FILE
+              echo "response: error $code" >> response.txt
             fi
           done < books_service/query.txt
-
-            sleep 1
-          done < $QUERY_FILE
       - name: Set DATE environment variable
         run: echo "DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
       - name: DockerHub login
