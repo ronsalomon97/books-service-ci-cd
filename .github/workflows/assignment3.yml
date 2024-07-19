@@ -1,4 +1,5 @@
 name: assignment3  # Workflow name
+
 on:
   push:
     branches:
@@ -185,9 +186,7 @@ jobs:
         run: |
           RESPONSE_FILE="response.txt"
           QUERY_FILE="books_service/query.txt"
-    
           echo "query results" > $RESPONSE_FILE
-
           while IFS= read -r query; do
             echo "Processing query: $query"  # Debugging output
             response=$(curl -s -w "\n%{http_code}" "http://localhost:5001/books$query")
@@ -199,25 +198,12 @@ jobs:
             else
               echo -e "query: $query\nresponse: error $http_code" >> $RESPONSE_FILE
             fi
-          done < books_service/query.txt
-
-            sleep 1
           done < $QUERY_FILE
-      - name: Set DATE environment variable
-        run: echo "DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
-      - name: DockerHub login
-        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-        if: success()
-      - name: Tag and push Docker image
-        run: |
-          docker tag ${{ secrets.DOCKER_USERNAME }}/books-service:latest ${{ secrets.DOCKER_USERNAME }}/books-service:${{ env.DATE }}
-          docker push ${{ secrets.DOCKER_USERNAME }}/books-service:${{ env.DATE }}
-        if: success()
-      - name: Upload final log file
+      - name: Upload response file
         uses: actions/upload-artifact@v4
         with:
-          name: log-final
-          path: log.txt
+          name: response
+          path: response.txt
 
   consolidate-logs:
     needs: [build, test, query]  # Run this job after all other jobs
