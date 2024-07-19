@@ -110,7 +110,7 @@ jobs:
           pytest -v tests/assn3_tests.py > assn3_test_results.txt
           if [ $? -eq 0 ]; then
             echo "tests succeeded" >> log.txt
-          else:
+          else
             echo "tests failed" >> log.txt
           fi
       - name: Upload test results
@@ -182,21 +182,21 @@ jobs:
         run: echo "::set-output name=id::$(docker ps -qf "name=books-service-ci-cd_books-service")"
       - name: Get books-service container logs
         run: docker logs ${{ steps.books_service.outputs.id }}
-      - name: Perform queries
+      - name: Execute queries and generate response.txt
         run: |
           RESPONSE_FILE="response.txt"
           QUERY_FILE="books_service/query.txt"
-          echo "query results" > $RESPONSE_FILE
+          touch $RESPONSE_FILE
           while IFS= read -r query; do
             echo "Processing query: $query"  # Debugging output
-            response=$(curl -s -w "\n%{http_code}" "http://localhost:5001/books$query")
-            http_code=$(echo "$response" | tail -n1)
-            echo "HTTP response code: $http_code"  # Debugging output
-            if [ "$http_code" == "200" ]; then
-              json=$(echo "$response" | head -n -1)
-              echo -e "query: $query\nresponse: $json" >> $RESPONSE_FILE
+            response=$(curl --location -s -w "\nHTTP_CODE:%{http_code}" "http://localhost:5001/books$query" -v)
+            body=$(echo "$response" | sed '$d')
+            code=$(echo "$response" | tail -n1 | cut -d':' -f2)
+            echo "query: $query" >> $RESPONSE_FILE
+            if [ "$code" -eq 200 ]; then
+              echo "response: $body" >> $RESPONSE_FILE
             else
-              echo -e "query: $query\nresponse: error $http_code" >> $RESPONSE_FILE
+              echo "response: error $code" >> $RESPONSE_FILE
             fi
           done < $QUERY_FILE
       - name: Upload response file
