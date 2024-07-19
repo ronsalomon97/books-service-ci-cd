@@ -188,12 +188,12 @@ jobs:
           touch response.txt
           echo "Starting query processing..." >> response.txt
           while IFS= read -r query; do
-            echo "Processing query: $query"  # Debugging output
+            echo "Processing query: $query" >> response.txt  # Debugging output
             response=$(curl --location -s -w "\nHTTP_CODE:%{http_code}" "http://localhost:5001/books$query" -v)
             body=$(echo "$response" | sed '$d')
             code=$(echo "$response" | tail -n1 | cut -d':' -f2)
             echo "query: $query" >> response.txt
-            echo "HTTP response code: $code"  # Debugging output
+            echo "HTTP response code: $code" >> response.txt  # Debugging output
             if [ "$code" -eq 200 ]; then
               echo "response: $body" >> response.txt
             else
@@ -201,7 +201,7 @@ jobs:
             fi
           done < books_service/query.txt
 
-          echo "Contents of response file:"
+          echo "Contents of response file:" >> response.txt
           cat response.txt
         shell: bash
 
@@ -221,3 +221,33 @@ jobs:
           name: log
           path: log.txt
           overwrite: true
+
+  consolidate-logs:
+    needs: [build, test, query]  # Run this job after all other jobs
+    runs-on: ubuntu-latest  # Specify the runner
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Download build log
+        uses: actions/download-artifact@v4
+        with:
+          name: log-build
+          path: .
+      - name: Download test log
+        uses: actions/download-artifact@v4
+        with:
+          name: log-test
+          path: .
+      - name: Download final log
+        uses: actions/download-artifact@v4
+        with:
+          name: log-final
+          path: .
+      - name: Consolidate logs
+        run: |
+          cat log-build/log.txt log-test/log.txt log-final/log.txt > consolidated-log.txt
+      - name: Upload consolidated log
+        uses: actions/upload-artifact@v4
+        with:
+          name: consolidated-log
+          path: consolidated-log.txt
