@@ -1,3 +1,5 @@
+?title=somebook
+?publishedDate=2016-06-13
 ?title=Adventures of Huckleberry Finn
 ?title=The Best of Isaac Asimov
 ?title=Fear No Evil
