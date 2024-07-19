@@ -225,3 +225,8 @@ jobs:
           name: log
           path: log.txt
           overwrite: true
+      - name: Upload response file
+        uses: actions/upload-artifact@v4
+        with:
+          name: response
+          path: response.txt
