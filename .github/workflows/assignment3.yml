@@ -177,8 +177,7 @@ jobs:
             '{"title": "Second Foundation", "authors": "Isaac Asimov", "ISBN": "9780553293364", "genre": "Science Fiction"}'
           )
           for book in "${books[@]}"; do
-            response=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "Content-Type: application/json" -d "$book" "$url")
-            echo "POST request response code: $response"
+            curl -X POST -H "Content-Type: application/json" -d "$book" "$url"
           done
       - name: Get books-service container ID
         id: books_service
@@ -187,24 +186,28 @@ jobs:
         run: docker logs ${{ steps.books_service.outputs.id }}
       - name: Perform queries
         run: |
-          touch response.txt
-          echo "Starting query processing..." >> response.txt
+          RESPONSE_FILE="response.txt"
+          QUERY_FILE="books_service/query.txt"
+    
+          echo "query results" > $RESPONSE_FILE
+
           while IFS= read -r query; do
-            echo "Processing query: $query" >> response.txt
-            response=$(curl -s -w "\nHTTP_CODE:%{http_code}" "http://localhost:5001/books$query")
+            echo "Processing query: $query" >> $RESPONSE_FILE
+            response=$(curl --location -s -w "\nHTTP_CODE:%{http_code}" "http://localhost:5001/books$query")
             body=$(echo "$response" | sed '$d')
             code=$(echo "$response" | tail -n1 | cut -d':' -f2)
-            echo "query: $query" >> response.txt
-            echo "HTTP response code: $code" >> response.txt
+            echo "query: $query" >> $RESPONSE_FILE
+            echo "HTTP response code: $code" >> $RESPONSE_FILE
             if [ "$code" -eq 200 ]; then
-              echo "response: $body" >> response.txt
+              echo "response: $body" >> $RESPONSE_FILE
             else
-              echo "response: error $code" >> response.txt
+              echo "response: error $code" >> $RESPONSE_FILE
             fi
-          done < books_service/query.txt
-          echo "Contents of response file:"
-          cat response.txt
-        shell: bash
+          done < $QUERY_FILE
+
+          echo "Contents of response file:" >> $RESPONSE_FILE
+          cat $RESPONSE_FILE
+
       - name: Set DATE environment variable
         run: echo "DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
       - name: DockerHub login
@@ -221,3 +224,4 @@ jobs:
           name: log
           path: log.txt
           overwrite: true
+
