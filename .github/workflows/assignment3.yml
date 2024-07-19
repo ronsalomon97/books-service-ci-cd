@@ -1,4 +1,5 @@
 name: assignment3  # Workflow name
+
 on:
   push:
     branches:
@@ -176,7 +177,8 @@ jobs:
             '{"title": "Second Foundation", "authors": "Isaac Asimov", "ISBN": "9780553293364", "genre": "Science Fiction"}'
           )
           for book in "${books[@]}"; do
-            curl -X POST -H "Content-Type: application/json" -d "$book" "$url"
+            response=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "Content-Type: application/json" -d "$book" "$url")
+            echo "POST request response code: $response"
           done
       - name: Get books-service container ID
         id: books_service
@@ -188,23 +190,21 @@ jobs:
           touch response.txt
           echo "Starting query processing..." >> response.txt
           while IFS= read -r query; do
-            echo "Processing query: $query"  # Debugging output
-            response=$(curl --location -s -w "\nHTTP_CODE:%{http_code}" "http://localhost:5001/books$query" -v)
+            echo "Processing query: $query" >> response.txt
+            response=$(curl -s -w "\nHTTP_CODE:%{http_code}" "http://localhost:5001/books$query")
             body=$(echo "$response" | sed '$d')
             code=$(echo "$response" | tail -n1 | cut -d':' -f2)
             echo "query: $query" >> response.txt
-            echo "HTTP response code: $code"  # Debugging output
+            echo "HTTP response code: $code" >> response.txt
             if [ "$code" -eq 200 ]; then
               echo "response: $body" >> response.txt
             else
               echo "response: error $code" >> response.txt
             fi
           done < books_service/query.txt
-
           echo "Contents of response file:"
           cat response.txt
         shell: bash
-
       - name: Set DATE environment variable
         run: echo "DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
       - name: DockerHub login
