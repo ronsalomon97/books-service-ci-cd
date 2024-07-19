@@ -45,11 +45,12 @@ jobs:
         with:
           name: books-service-image
           path: /tmp/books-service-image.tar
-      - name: Upload log file
+      - name: Upload updated log file
         uses: actions/upload-artifact@v4
         with:
-          name: log-build
+          name: log
           path: log.txt
+          overwrite: true
 
   test:
     needs: build  # Run test job after build job
@@ -60,7 +61,7 @@ jobs:
       - name: Download log file
         uses: actions/download-artifact@v4
         with:
-          name: log-build
+          name: log
           path: .
       - name: Download Docker image artifact
         uses: actions/download-artifact@v4
@@ -121,8 +122,9 @@ jobs:
       - name: Upload updated log file
         uses: actions/upload-artifact@v4
         with:
-          name: log-test
+          name: log
           path: log.txt
+          overwrite: true
 
   query:
     needs: test  # Run query job after test job
@@ -133,7 +135,7 @@ jobs:
       - name: Download log file
         uses: actions/download-artifact@v4
         with:
-          name: log-test
+          name: log
           path: .
       - name: Verify presence of query.txt
         run: |
@@ -200,11 +202,9 @@ jobs:
               echo -e "query: $query\nresponse: error $http_code" >> $RESPONSE_FILE
             fi
           done < books_service/query.txt
-      - name: Upload response file
-        uses: actions/upload-artifact@v4
-        with:
-          name: query-results
-          path: response.txt
+
+            sleep 1
+          done < $QUERY_FILE
       - name: Set DATE environment variable
         run: echo "DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
       - name: DockerHub login
@@ -218,35 +218,6 @@ jobs:
       - name: Upload final log file
         uses: actions/upload-artifact@v4
         with:
-          name: log-final
+          name: log
           path: log.txt
-
-  consolidate-logs:
-    needs: [build, test, query]  # Run this job after all other jobs
-    runs-on: ubuntu-latest  # Specify the runner
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Download build log
-        uses: actions/download-artifact@v4
-        with:
-          name: log-build
-          path: .
-      - name: Download test log
-        uses: actions/download-artifact@v4
-        with:
-          name: log-test
-          path: .
-      - name: Download final log
-        uses: actions/download-artifact@v4
-        with:
-          name: log-final
-          path: .
-      - name: Consolidate logs
-        run: |
-          cat log-build/log.txt log-test/log.txt log-final/log.txt > consolidated-log.txt
-      - name: Upload consolidated log
-        uses: actions/upload-artifact@v4
-        with:
-          name: consolidated-log
-          path: consolidated-log.txt
+          overwrite: true
