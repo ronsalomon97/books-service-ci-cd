@@ -186,17 +186,25 @@ jobs:
       - name: Perform queries
         run: |
           touch response.txt
+          echo "Starting query processing..." >> response.txt
           while IFS= read -r query; do
+            echo "Processing query: $query"  # Debugging output
             response=$(curl --location -s -w "\nHTTP_CODE:%{http_code}" "http://localhost:5001/books$query" -v)
             body=$(echo "$response" | sed '$d')
             code=$(echo "$response" | tail -n1 | cut -d':' -f2)
             echo "query: $query" >> response.txt
+            echo "HTTP response code: $code"  # Debugging output
             if [ "$code" -eq 200 ]; then
               echo "response: $body" >> response.txt
             else
               echo "response: error $code" >> response.txt
             fi
           done < books_service/query.txt
+
+          echo "Contents of response file:"
+          cat response.txt
+        shell: bash
+
       - name: Set DATE environment variable
         run: echo "DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
       - name: DockerHub login
