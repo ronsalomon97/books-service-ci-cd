@@ -1,8 +1,6 @@
-?title=somebook
-?publishedDate=2016-06-13
-?title=Adventures of Huckleberry Finn
-?title=The Best of Isaac Asimov
-?title=Fear No Evil
-?title=The Adventures of Tom Sawyer
-?title=I, Robot
-?title=Second Foundation
+?title=Adventures%20of%20Huckleberry%20Finn
+?title=The%20Best%20of%20Isaac%20Asimov
+?title=Fear%20No%20Evil
+?title=The%20Adventures%20of%20Tom%20Sawyer
+?title=I,%20Robot
+?title=Second%20Foundation
