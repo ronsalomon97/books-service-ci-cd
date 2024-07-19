@@ -222,6 +222,13 @@ jobs:
           QUERY_FILE="books_service/query.txt"
           touch $RESPONSE_FILE
           echo "query results" > $RESPONSE_FILE
+          echo "Reading query file: $QUERY_FILE" >> $RESPONSE_FILE
+          if [ -f $QUERY_FILE ]; then
+            echo "File $QUERY_FILE exists and is readable." >> $RESPONSE_FILE
+          else
+            echo "File $QUERY_FILE does not exist or is not readable." >> $RESPONSE_FILE
+            exit 1
+          fi
           while IFS= read -r query; do
             echo "Processing query: $query" >> $RESPONSE_FILE
             response=$(curl -s -w "\nHTTP_CODE:%{http_code}" "http://localhost:5001/books$query")
@@ -235,10 +242,8 @@ jobs:
               echo "response: error $code" >> $RESPONSE_FILE
             fi
           done < $QUERY_FILE
-
-          echo "Contents of response file:"
+          echo "Contents of response file:" >> $RESPONSE_FILE
           cat $RESPONSE_FILE
-        shell: bash
 
       - name: Set DATE environment variable
         run: echo "DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
