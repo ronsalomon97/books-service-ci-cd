@@ -200,9 +200,11 @@ jobs:
               echo -e "query: $query\nresponse: error $http_code" >> $RESPONSE_FILE
             fi
           done < books_service/query.txt
-
-            sleep 1
-          done < $QUERY_FILE
+      - name: Upload response file
+        uses: actions/upload-artifact@v4
+        with:
+          name: query-results
+          path: response.txt
       - name: Set DATE environment variable
         run: echo "DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
       - name: DockerHub login
