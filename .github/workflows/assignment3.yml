@@ -189,7 +189,6 @@ jobs:
       - name: Perform queries
         run: |
           touch response.txt
-          echo "Starting query processing..." >> response.txt
           while IFS= read -r query; do
             echo "Processing query: $query"  # Debugging output
             response=$(curl --location -s -w "\nHTTP_CODE:%{http_code}" "http://localhost:5001/books$query" -v)
