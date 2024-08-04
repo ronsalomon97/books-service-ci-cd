@@ -110,7 +110,7 @@ jobs:
 
       - name: Get books-service container ID
         id: books_service
-        run: echo "id=$(docker ps -qf 'name=books')" >> $GITHUB_ENV
+        run: echo "id=$(docker ps -qf 'name=books-service')" >> $GITHUB_ENV
 
       - name: Get books-service container logs
         if: failure()
