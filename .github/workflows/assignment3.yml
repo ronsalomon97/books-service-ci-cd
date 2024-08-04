@@ -148,8 +148,8 @@ jobs:
           fi
       - name: Set up Docker Compose
         run: |
-          docker-compose -f docker-compose.yml down
-          docker-compose -f docker-compose.yml up -d
+          docker compose -f docker-compose.yml down
+          docker compose -f docker-compose.yml up -d
       - name: Check containers are running
         run: docker ps
       - name: Health check for books-service
