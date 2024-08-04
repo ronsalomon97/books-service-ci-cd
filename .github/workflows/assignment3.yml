@@ -75,8 +75,8 @@ jobs:
         run: docker image ls
       - name: Set up Docker Compose
         run: |
-          docker-compose -f docker-compose.yml down
-          docker-compose -f docker-compose.yml up -d
+          docker compose -f docker-compose.yml down
+          docker compose -f docker-compose.yml up -d
       - name: Check containers are running
         run: docker ps
       - name: Health check for books-service
@@ -127,7 +127,7 @@ jobs:
           path: log.txt
           overwrite: true
       - name: Shutdown Docker Compose
-        run: docker-compose -f docker-compose.yml down
+        run: docker compose -f docker-compose.yml down
 
   query:
     needs: test
@@ -152,8 +152,8 @@ jobs:
           fi
       - name: Set up Docker Compose
         run: |
-          docker-compose -f docker-compose.yml down
-          docker-compose -f docker-compose.yml up -d
+          docker compose -f docker-compose.yml down
+          docker compose -f docker-compose.yml up -d
       - name: Check containers are running
         run: docker ps
       - name: Health check for books-service
