@@ -183,9 +183,9 @@ jobs:
           done
       - name: Get books-service container ID
         id: books_service
-        run: echo "::set-output name=id::$(docker ps -qf "name=books-service-ci-cd_books-service")"
+        run: echo "BOOKS_SERVICE_ID=$(docker ps -qf "name=books-service")" >> $GITHUB_ENV
       - name: Get books-service container logs
-        run: docker logs ${{ steps.books_service.outputs.id }}
+        run: docker logs ${{ env.BOOKS_SERVICE_ID }}
       - name: Perform queries
         run: |
           touch response.txt
