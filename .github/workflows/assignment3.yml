@@ -112,7 +112,7 @@ jobs:
         id: books_service
         run: |
           CONTAINER_ID=$(docker ps -qf 'name=books-service-ci-cd-books-service-1')
-          echo "Container ID found: ${CONTAINER_ID}" # Debugging output
+          echo "Container ID found: ${CONTAINER_ID}"
           echo "id=${CONTAINER_ID}" >> $GITHUB_ENV
 
       - name: Get books-service container logs
@@ -218,10 +218,13 @@ jobs:
 
       - name: Get books-service container ID
         id: books_service
-        run: echo "::set-output name=id::$(docker ps -qf "name=books-service-ci-cd_books-service")"
+        run: |
+          CONTAINER_ID=$(docker ps -qf 'name=books-service-ci-cd-books-service-1')
+          echo "Container ID found: ${CONTAINER_ID}"
+          echo "id=${CONTAINER_ID}" >> $GITHUB_ENV
 
       - name: Get books-service container logs
-        run: docker logs ${{ steps.books_service.outputs.id }}
+        run: docker logs ${{ env.id }}
 
       - name: Perform queries
         run: |
