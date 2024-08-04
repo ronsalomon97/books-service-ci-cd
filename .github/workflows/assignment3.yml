@@ -9,17 +9,22 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
       - name: Log start time
         run: echo "$(date -Iminutes)" > log.txt
+
       - name: Log submitter names
         run: echo "Ron Salomon, Maya Levi" >> log.txt
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+
       - name: Build and Push Docker image for books service
         uses: docker/build-push-action@v4
         with:
@@ -27,55 +32,69 @@ jobs:
           file: ./books_service/Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/books-service:latest
+
       - name: Log build success
         run: echo "image successfully built" >> log.txt
         if: success()
+
       - name: Log build failure
         run: echo "image not able to be built" >> log.txt
         if: failure()
+
       - name: Pull Docker image to ensure availability
         run: docker pull ${{ secrets.DOCKER_USERNAME }}/books-service:latest
         if: success()
+
       - name: Save Docker image
         run: docker save -o /tmp/books-service-image.tar ${{ secrets.DOCKER_USERNAME }}/books-service:latest
         if: success()
+
       - name: Upload Docker image artifact
         uses: actions/upload-artifact@v4
         with:
           name: books-service-image
           path: /tmp/books-service-image.tar
+
       - name: Upload updated log file
         uses: actions/upload-artifact@v4
         with:
           name: log
           path: log.txt
           overwrite: true
+
   test:
     needs: build  
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Download log file
         uses: actions/download-artifact@v4
         with:
           name: log
           path: .
+
       - name: Download Docker image artifact
         uses: actions/download-artifact@v4
         with:
           name: books-service-image
           path: /tmp
+
       - name: Load Docker image from artifact
         run: docker load --input /tmp/books-service-image.tar
+
       - name: Check Docker image is loaded
         run: docker image ls
+
       - name: Set up Docker Compose
         run: |
           docker compose -f docker-compose.yml down
           docker compose -f docker-compose.yml up -d
+
       - name: Check containers are running
         run: docker ps
+
       - name: Health check for books-service
         run: |
           for i in {1..10}; do
@@ -88,22 +107,28 @@ jobs:
             sleep 5
           done
           echo "books-service did not start in time" && echo "Container failed to run" >> log.txt && exit 1
+
       - name: Get books-service container ID
         id: books_service
-        run: echo "::set-output name=id::$(docker ps -qf "name=books-service-ci-cd_books-service")"
+        run: echo "id=$(docker ps -qf 'name=books-service-ci-cd_books-service')" >> $GITHUB_ENV
+
       - name: Get books-service container logs
         if: failure()
-        run: docker logs ${{ steps.books_service.outputs.id }}
+        run: docker logs ${{ env.id }}
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install pytest requests
+
       - name: List books_service directory
         run: ls -R books_service
+
       - name: Run pytest
         run: |
           pytest -v tests/assn3_tests.py > assn3_test_results.txt || true
@@ -112,30 +137,36 @@ jobs:
           else
             echo "tests failed" >> log.txt
           fi
+
       - name: Upload test results
         uses: actions/upload-artifact@v4
         with:
           name: test-results
           path: assn3_test_results.txt
+
       - name: Upload updated log file
         uses: actions/upload-artifact@v4
         with:
           name: log
           path: log.txt
           overwrite: true
+
       - name: Shutdown Docker Compose
         run: docker compose -f docker-compose.yml down
+
   query:
     needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Download log file
         uses: actions/download-artifact@v4
         with:
           name: log
           path: .
+
       - name: Verify presence of query.txt
         run: |
           if [ -f books_service/query.txt ]; then
@@ -146,12 +177,15 @@ jobs:
             echo "query.txt not found"
             exit 1
           fi
+
       - name: Set up Docker Compose
         run: |
           docker compose -f docker-compose.yml down
           docker compose -f docker-compose.yml up -d
+
       - name: Check containers are running
         run: docker ps
+
       - name: Health check for books-service
         run: |
           for i in {1..10}; do
@@ -163,6 +197,7 @@ jobs:
             sleep 5
           done
           echo "books-service did not start in time" && exit 1
+
       - name: Execute POST requests
         run: |
           url="http://localhost:5001/books"
@@ -177,11 +212,14 @@ jobs:
           for book in "${books[@]}"; do
             curl -X POST -H "Content-Type: application/json" -d "$book" "$url"
           done
+
       - name: Get books-service container ID
         id: books_service
-        run: echo "::set-output name=id::$(docker ps -qf "name=books-service-ci-cd_books-service")"
+        run: echo "id=$(docker ps -qf 'name=books-service-ci-cd_books-service')" >> $GITHUB_ENV
+
       - name: Get books-service container logs
-        run: docker logs ${{ steps.books_service.outputs.id }}
+        run: docker logs ${{ env.id }}
+
       - name: Perform queries
         run: |
           touch response.txt
@@ -201,25 +239,31 @@ jobs:
           echo "Contents of response file:"
           cat response.txt
         shell: bash
+
       - name: Set DATE environment variable
         run: echo "DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
+
       - name: DockerHub login
         run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
         if: success()
+
       - name: Pull Docker image to ensure availability
         run: docker pull ${{ secrets.DOCKER_USERNAME }}/books-service:latest
         if: success()
+
       - name: Tag and push Docker image
         run: |
           docker tag ${{ secrets.DOCKER_USERNAME }}/books-service:latest ${{ secrets.DOCKER_USERNAME }}/books-service:${{ env.DATE }}
           docker push ${{ secrets.DOCKER_USERNAME }}/books-service:${{ env.DATE }}
         if: success()
+
       - name: Upload final log file
         uses: actions/upload-artifact@v4
         with:
           name: log
           path: log.txt
           overwrite: true
+
       - name: Upload response file
         uses: actions/upload-artifact@v4
         with:
