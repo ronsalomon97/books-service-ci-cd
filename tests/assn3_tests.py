@@ -51,7 +51,7 @@ def test_get_books():
     response = requests.post(url, json={"title": "The Best of Isaac Asimov", "authors": "Isaac Asimov", "ISBN": "9780385050784", "genre": "Science Fiction"})
     response = requests.post(url, json={"title": "Fear No Evil", "authors": "Natan Sharansky", "ISBN": "9780394558783", "genre": "Biography"})
     response = requests.get(url)
-    assert response.status_code == 404
+    assert response.status_code == 200
     assert len(response.json()) == 3
 
 def test_post_invalid_isbn():
