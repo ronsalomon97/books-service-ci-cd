@@ -1,6 +1,5 @@
-?title=Adventures%20of%20Huckleberry%20Finn
-?title=The%20Best%20of%20Isaac%20Asimov
-?title=Fear%20No%20Evil
-?title=The%20Adventures%20of%20Tom%20Sawyer
-?title=I,%20Robot
-?title=Second%20Foundation
+?authors=Mark Twain
+?ISBN=9780553293364
+?genre=Science Fiction
+?genre=Science Fiction&title=I, Robot
+?publishedDate=1948
